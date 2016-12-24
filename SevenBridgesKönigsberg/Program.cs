@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace SevenBridgesKönigsberg
 {
@@ -34,12 +33,8 @@ namespace SevenBridgesKönigsberg
     
     public class KoenensbergSolver
     {
-        /*
         readonly char[] _vertices = { 'a', 'b', 'c', 'd' };
         readonly string[] _edges = { "e1", "e2", "e3", "e4", "e5", "e6", "e7" };
-        */
-        readonly char[] _vertices = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i' };
-        readonly string[] _edges = { "e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "e10", "e11", "e12" };
 
         readonly Dictionary<char, string[]> _incidentEdges = new Dictionary<char, string[]>();
         readonly List<string> solutions = new List<string>();
@@ -47,14 +42,11 @@ namespace SevenBridgesKönigsberg
         public KoenensbergSolver()
         {
             // Setup edge incidents
-            /*
+            
             _incidentEdges['a'] = new[] { "e1", "e2", "e5"};
             _incidentEdges['b'] = new[] { "e1", "e2", "e3", "e4", "e6" };
             _incidentEdges['c'] = new[] { "e3", "e4", "e7" };
             _incidentEdges['d'] = new[] { "e5", "e6", "e7" };
-            */
-            _incidentEdges['a'] = new[] { "e1", "e3" };
-            _incidentEdges['b'] = new[] { "e1", "e3" };
         }
 
         public List<string> SolveBridges()
