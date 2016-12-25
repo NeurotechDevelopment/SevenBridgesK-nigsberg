@@ -11,8 +11,8 @@ namespace SevenBridgesKönigsberg
 
         static void Main(string[] args)
         {
-            var solutions = _solver.FindCycles();
-            
+            var solutions = _solver.FindPath();
+            Console.WriteLine();
             if (solutions.Count > 0)
             {
                 ConsoleWriter.WriteLine("The following solutions found:");
@@ -22,8 +22,7 @@ namespace SevenBridgesKönigsberg
                 }
             }
             else
-            {
-                Console.WriteLine();
+            {                
                 ConsoleWriter.WriteLine("No solutions found", ConsoleWriter.TextColor.Yellow);
             }
             
@@ -97,16 +96,34 @@ namespace SevenBridgesKönigsberg
             _edgeCount = incidentEdges.Values.SelectMany(edges => edges).Distinct().Count();           
         }
 
+        /// <summary>
+        /// Looks for Eurler cycles in a graph.
+        /// </summary>
+        /// <returns></returns>
         public List<string> FindCycles()
         {
+            return FindPath(cyclesOnly: true);
+        }
+
+        /// <summary>
+        /// Looks for Euler path in a graph (not necessarily a cycle).
+        /// </summary>
+        /// <returns></returns>
+        public List<string> FindPath()
+        {
+            return FindPath(cyclesOnly: false);
+        }
+
+        private List<string> FindPath(bool cyclesOnly)
+        {
             solutions.Clear();
-            
+
             // Walk over each vertex as starting vertex
             foreach (char v0 in _vertices)
             {
                 ConsoleWriter.WriteLine("Starting with vertex " + v0);
 
-                FindRemainingPath(v0, v0);
+                FindRemainingPath(v0, v0, cyclesOnly);
             }
 
             return solutions;
@@ -117,11 +134,11 @@ namespace SevenBridgesKönigsberg
         /// Fills solutions field member.
         /// </summary>
         /// <returns>True if at least one solution was found.</returns>
-        private bool FindRemainingPath(char initialVertex, char currentVertex, List<string> _markedEdges = null)
+        private bool FindRemainingPath(char initialVertex, char currentVertex, bool cyclesOnly, List<string> _markedEdges = null)
         {
             List<string> markedEdges = _markedEdges != null ? _markedEdges.ToList() : new List<string>();
             
-            if (markedEdges.Count == _edgeCount)
+            if (markedEdges.Count == _edgeCount && (!cyclesOnly || cyclesOnly && initialVertex == currentVertex))
             {
                 // Solution found
                 string solution = BuildSolutionString(initialVertex, markedEdges);
@@ -152,7 +169,7 @@ namespace SevenBridgesKönigsberg
                 // Locate vertex wchich is not currentVertex and is incident to edge e 
                 char incidentVertex = GetIncidentVertex(e, currentVertex);
                 Console.Write(incidentVertex + " ");
-                bool isSolutionFound = FindRemainingPath(initialVertex, incidentVertex, markedEdges);
+                bool isSolutionFound = FindRemainingPath(initialVertex, incidentVertex, cyclesOnly, markedEdges);
 
                 if (!isSolutionFound)
                 {
