@@ -7,7 +7,7 @@ namespace SevenBridgesKönigsberg
 {
     class Program
     {
-        static EulerCycleBacktrackSolver _solver = new EulerCycleBacktrackSolver(CreateTwoTrianglesGraph());
+        static EulerPathBacktrackSolver _solver = new EulerPathBacktrackSolver(CreateGraphWith2OddVertices());
 
         static void Main(string[] args)
         {
@@ -23,11 +23,26 @@ namespace SevenBridgesKönigsberg
             }
             else
             {
+                Console.WriteLine();
                 ConsoleWriter.WriteLine("No solutions found", ConsoleWriter.TextColor.Yellow);
             }
             
             Console.WriteLine("Press ENTER to exit.");
             Console.ReadLine();
+        }
+
+        static Dictionary<char, string[]> CreateGraphWith2OddVertices()
+        {
+            Dictionary<char, string[]> incidentEdges = new Dictionary<char, string[]>();
+            incidentEdges['a'] = new[] { "1", "7", "8" };
+            incidentEdges['b'] = new[] { "1", "2", "9" };
+            incidentEdges['c'] = new[] { "2", "3" };
+            incidentEdges['d'] = new[] { "3", "4" };
+            incidentEdges['e'] = new[] { "5", "6" };
+            incidentEdges['f'] = new[] { "6", "7" };
+            incidentEdges['g'] = new[] { "4", "5", "8", "9" };
+
+            return incidentEdges;
         }
 
         static Dictionary<char, string[]> CreateSquareGraph()
@@ -67,7 +82,7 @@ namespace SevenBridgesKönigsberg
     /// <summary>
     /// Finds all Euler cycles on a given fully connected graph.
     /// </summary>
-    public class EulerCycleBacktrackSolver
+    public class EulerPathBacktrackSolver
     {
         readonly char[] _vertices;
         readonly int _edgeCount;
@@ -75,7 +90,7 @@ namespace SevenBridgesKönigsberg
         readonly Dictionary<char, string[]> _incidentEdges = new Dictionary<char, string[]>();
         readonly List<string> solutions = new List<string>();
 
-        public EulerCycleBacktrackSolver(Dictionary<char, string[]> incidentEdges)
+        public EulerPathBacktrackSolver(Dictionary<char, string[]> incidentEdges)
         {
             _vertices = incidentEdges.Keys.ToArray();
             _incidentEdges = incidentEdges;
@@ -105,7 +120,8 @@ namespace SevenBridgesKönigsberg
         private bool FindRemainingPath(char initialVertex, char currentVertex, List<string> _markedEdges = null)
         {
             List<string> markedEdges = _markedEdges != null ? _markedEdges.ToList() : new List<string>();
-            if (initialVertex == currentVertex && markedEdges.Count == _edgeCount)
+            
+            if (markedEdges.Count == _edgeCount)
             {
                 // Solution found
                 string solution = BuildSolutionString(initialVertex, markedEdges);
@@ -135,7 +151,7 @@ namespace SevenBridgesKönigsberg
 
                 // Locate vertex wchich is not currentVertex and is incident to edge e 
                 char incidentVertex = GetIncidentVertex(e, currentVertex);
-
+                Console.Write(incidentVertex + " ");
                 bool isSolutionFound = FindRemainingPath(initialVertex, incidentVertex, markedEdges);
 
                 if (!isSolutionFound)
