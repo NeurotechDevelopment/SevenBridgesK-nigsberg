@@ -7,15 +7,15 @@ namespace SevenBridgesKönigsberg
 {
     class Program
     {
-        static KoenensbergSolver _solver = new KoenensbergSolver();
+        static EulerCycleBacktrackSolver _solver = new EulerCycleBacktrackSolver(CreateTwoTrianglesGraph());
 
         static void Main(string[] args)
         {
-            var solutions = _solver.SolveBridges();
+            var solutions = _solver.FindCycles();
             
             if (solutions.Count > 0)
             {
-                Console.WriteLine("The following solutions found:");
+                ConsoleWriter.WriteLine("The following solutions found:");
                 foreach(var path in solutions)
                 {
                     Console.WriteLine(path);
@@ -23,40 +23,73 @@ namespace SevenBridgesKönigsberg
             }
             else
             {
-                Console.WriteLine("No solutions found");
+                ConsoleWriter.WriteLine("No solutions found", ConsoleWriter.TextColor.Yellow);
             }
             
             Console.WriteLine("Press ENTER to exit.");
             Console.ReadLine();
         }
-    }
+
+        static Dictionary<char, string[]> CreateSquareGraph()
+        {
+            Dictionary<char, string[]> incidentEdges = new Dictionary<char, string[]>();
+            incidentEdges['a'] = new[] { "e1", "e4" };
+            incidentEdges['b'] = new[] { "e1", "e2" };
+            incidentEdges['c'] = new[] { "e2", "e3" };
+            incidentEdges['d'] = new[] { "e3", "e4" };           
+
+            return incidentEdges;
+        }
+
+        static Dictionary<char, string[]> CreateTwoTrianglesGraph()
+        {
+            Dictionary<char, string[]> incidentEdges = new Dictionary<char, string[]>();
+            incidentEdges['a'] = new[] { "e1", "e3" };
+            incidentEdges['b'] = new[] { "e3", "e2", "e4", "e6" };
+            incidentEdges['c'] = new[] { "e5", "e6" };
+            incidentEdges['d'] = new[] { "e4", "e5" };
+            incidentEdges['e'] = new[] { "e1", "e2" };
+
+            return incidentEdges;
+        }
+
+        static Dictionary<char, string[]> CreateKoenegsbergGraph()
+        {
+            Dictionary<char, string[]> incidentEdges = new Dictionary<char, string[]>();
+            incidentEdges['a'] = new[] { "e1", "e2", "e5" };
+            incidentEdges['b'] = new[] { "e1", "e2", "e3", "e4", "e6" };
+            incidentEdges['c'] = new[] { "e3", "e4", "e7" };
+            incidentEdges['d'] = new[] { "e5", "e6", "e7" };
+            return incidentEdges;
+        }
+    }    
     
-    public class KoenensbergSolver
+    /// <summary>
+    /// Finds all Euler cycles on a given fully connected graph.
+    /// </summary>
+    public class EulerCycleBacktrackSolver
     {
-        readonly char[] _vertices = { 'a', 'b', 'c', 'd' };
-        readonly string[] _edges = { "e1", "e2", "e3", "e4", "e5", "e6", "e7" };
+        readonly char[] _vertices;
+        readonly int _edgeCount;
 
         readonly Dictionary<char, string[]> _incidentEdges = new Dictionary<char, string[]>();
         readonly List<string> solutions = new List<string>();
 
-        public KoenensbergSolver()
+        public EulerCycleBacktrackSolver(Dictionary<char, string[]> incidentEdges)
         {
-            // Setup edge incidents
-            
-            _incidentEdges['a'] = new[] { "e1", "e2", "e5"};
-            _incidentEdges['b'] = new[] { "e1", "e2", "e3", "e4", "e6" };
-            _incidentEdges['c'] = new[] { "e3", "e4", "e7" };
-            _incidentEdges['d'] = new[] { "e5", "e6", "e7" };
+            _vertices = incidentEdges.Keys.ToArray();
+            _incidentEdges = incidentEdges;
+            _edgeCount = incidentEdges.Values.SelectMany(edges => edges).Distinct().Count();           
         }
 
-        public List<string> SolveBridges()
+        public List<string> FindCycles()
         {
             solutions.Clear();
             
             // Walk over each vertex as starting vertex
             foreach (char v0 in _vertices)
             {
-                Console.WriteLine("Starting with vertex " + v0);
+                ConsoleWriter.WriteLine("Starting with vertex " + v0);
 
                 FindRemainingPath(v0, v0);
             }
@@ -72,38 +105,32 @@ namespace SevenBridgesKönigsberg
         private bool FindRemainingPath(char initialVertex, char currentVertex, List<string> _markedEdges = null)
         {
             List<string> markedEdges = _markedEdges != null ? _markedEdges.ToList() : new List<string>();
-            if (initialVertex == currentVertex && markedEdges.Count == _edges.Length)
+            if (initialVertex == currentVertex && markedEdges.Count == _edgeCount)
             {
                 // Solution found
-                StringBuilder vertexEdges = new StringBuilder();
-                vertexEdges.Append(initialVertex);
-                vertexEdges.Append(' ');
-                foreach (var e in markedEdges)
-                {
-                    vertexEdges.Append(e);
-                    vertexEdges.Append(' ');
-                    currentVertex = GetIncidentVertex(e, currentVertex);
-                    vertexEdges.Append(currentVertex.ToString());
-                    vertexEdges.Append(' ');
-                }
-                solutions.Add(vertexEdges.ToString());
+                string solution = BuildSolutionString(initialVertex, markedEdges);
+                solutions.Add(solution);
+                Console.WriteLine();
+                ConsoleWriter.WriteLine("Solution found:" + solution, ConsoleWriter.TextColor.Green);
                 return true;
             }
-
-            Console.Write(currentVertex + " ");
 
             var unmarkedIncidentEdges = _incidentEdges[currentVertex].Except(markedEdges);
             if (unmarkedIncidentEdges.Count() == 0)
             {
                 Console.WriteLine();
-                Console.WriteLine("Dead end: cannot exit vertex {0}.", currentVertex);
+                ConsoleWriter.WriteLine(string.Format("Dead end: cannot exit vertex {0}.", currentVertex), ConsoleWriter.TextColor.Yellow);
                 return false;
             }
 
             foreach (string e in unmarkedIncidentEdges)
             {
+                if (markedEdges.Count == 0)
+                {
+                    Console.Write(currentVertex + " ");
+                }
                 markedEdges.Add(e);
-
+               
                 Console.Write(e + " ");
 
                 // Locate vertex wchich is not currentVertex and is incident to edge e 
@@ -114,16 +141,71 @@ namespace SevenBridgesKönigsberg
                 if (!isSolutionFound)
                 {
                     // Dead end reached. Unmark edge and continue looking for alternatives
-                    markedEdges.Remove(e);
+                    Console.WriteLine();
+                    ConsoleWriter.WriteLine("Backtracking...", ConsoleWriter.TextColor.Yellow);
+                    Console.Write(BuildSolutionString(initialVertex, markedEdges));
                 }
+                markedEdges.Remove(e);
             }
 
             return solutions.Count > 0;
+        }
+
+        private string BuildSolutionString(char initialVertex, List<string> markedEdges)
+        {
+            StringBuilder vertexEdges = new StringBuilder();
+            char currentVertex = initialVertex;
+            vertexEdges.Append(initialVertex);
+            vertexEdges.Append(' ');
+            
+            foreach (var e in markedEdges)
+            {
+                vertexEdges.Append(e);
+                vertexEdges.Append(' ');
+                currentVertex = GetIncidentVertex(e, currentVertex);
+                vertexEdges.Append(currentVertex.ToString());
+                vertexEdges.Append(' ');
+            }
+            return vertexEdges.ToString();
         }
 
         private char GetIncidentVertex(string edge, char excludeVertex)
         {
             return _incidentEdges.Single(k => k.Key != excludeVertex && k.Value.Contains(edge)).Key;
         }
-    }    
+    }
+    
+    public static class ConsoleWriter
+    {
+        public enum TextColor { Default, Yellow, Green };
+        static readonly ConsoleColor _defaultColor = Console.ForegroundColor;
+
+        public static void WriteLine(string message, TextColor textColor = TextColor.Default)
+        {
+            SetConsoleColor(textColor);
+            Console.WriteLine(message);
+            RestoreConsoleColor();
+        }
+
+        private static void SetConsoleColor(TextColor textColor)
+        {
+            Console.ForegroundColor = GetColor(textColor);
+        }
+
+        private static void RestoreConsoleColor()
+        {
+            Console.ForegroundColor = _defaultColor;
+        }
+
+        private static ConsoleColor GetColor(TextColor textColor)
+        {
+            switch(textColor)
+            {
+                case TextColor.Default:return _defaultColor;
+                case TextColor.Green:return ConsoleColor.Green;
+                case TextColor.Yellow:return ConsoleColor.Yellow;
+                default:throw new NotImplementedException(string.Format("Color '{0}' is not supported.", textColor));
+            }
+        }
+    }
 }
